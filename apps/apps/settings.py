@@ -226,8 +226,8 @@ WORKFLOWAPP="shutongflow"
 
 # Ali OSS
 ALI_OSS = {
-    'access_key_id': 'LTAI4Fkc9eH1DpGiRYgY5J8W',
-    'access_key_secret': 'BObSGa00jGv9xiJGrYrewCUBwrNSKB',
+    'access_key_id': '',
+    'access_key_secret': '',
     'endpoint': 'oss-cn-shanghai.aliyuncs.com',
     'bucket_name': 'rain2drop-workflow',
     'bucket_url': 'https://rain2drop-workflow.oss-cn-shanghai.aliyuncs.com/',

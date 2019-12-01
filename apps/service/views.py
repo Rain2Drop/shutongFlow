@@ -15,7 +15,6 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import BasicAuthentication
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from service.serializers import LoonFlowAttachmentSerializer
-from common.upload import uploadfile
 from apps.apirequest import WorkFlowAPiRequest
 
 from service.ali_oss import Bucket
