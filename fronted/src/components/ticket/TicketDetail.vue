@@ -124,11 +124,20 @@
                     :label="field.name || field.field_name"
                   >
                     <tinymce v-model="detailForm[field.field_key]" :id="field.field_key" ref="tm"></tinymce>
+                    <!-- <ueditor v-if="field.field_type_id === 55" ueditorConfig="ueditorConfig" @ready="handleReady(detailForm[field.field_key])"></ueditor> -->
                   </FormItem>
                 </template>
                 <template v-else-if="field.field_attribute === 1">
                   <FormItem :label="field.name || field.field_name">
                     <div class="disabled_field" v-html="displaySelectKey(field)"></div>
+                  </FormItem>
+                </template>
+                <template v-else-if="field.field_attribute === 2 || field.field_attribute === 3">
+                  <FormItem :label="field.name || field.field_name">
+                    <Input
+                      v-model="field.field_value"
+                      :placeholder="$t(`field_label.${field.field_key}`)"
+                    ></Input>
                   </FormItem>
                 </template>
               </Col>
@@ -228,6 +237,17 @@ export default {
     };
   },
   methods: {
+    // handleReady (instance, data) {
+      // instance.setContent('')
+      // console.log(instance, data)
+      // instance.addListener('contentChange', () => {
+      //   for (let i = 0; i < this.init_state.field_list.length; i++) {
+      //     if (this.init_state.field_list[i].field_type_id === 55) {
+      //       this.newForm[this.init_state.field_list[i].field_key] = instance.getContent()
+      //     }
+      //   }
+      // })
+    // },
     init() {
       this.$store
         .dispatch("api_get_ticket_detail", { id: this.ticket_id })
@@ -269,9 +289,10 @@ export default {
         });
     },
     handleTicketTransition(formName, btn) {
-      // console.log(this.detailForm, this.detailFormRules, btn)
+      console.log(this.detailForm, this.detailFormRules, btn)
       this.$refs[formName].validate(valid => {
         if (valid) {
+          console.log('btn',btn)
           let data = {
             id: this.ticket.id,
             data: {
@@ -297,16 +318,30 @@ export default {
             }
           }
           Object.assign(data.data, this.detailForm);
-          this.$store
-            .dispatch("api_handle_ticket_action", data)
-            .then(resp => {
-              this.$Notice.success({ title: "处理成功" });
-              this.$router.push({ name: "todo" });
-            })
-            .catch(error => {
-              this.$Notice.error({ title: "工单处理失败" });
-              console.log(error);
-            });
+          if(btn.is_accept) {
+            this.$store
+              .dispatch("api_post_ticket_accept", data)
+              .then(resp => {
+                this.$Notice.success({ title: "处理成功" });
+                this.$router.push({ name: "todo" });
+              })
+              .catch(error => {
+                this.$Notice.error({ title: "工单处理失败" });
+                console.log(error);
+              });
+          } else {
+            this.$store
+              .dispatch("api_handle_ticket_action", data)
+              .then(resp => {
+                this.$Notice.success({ title: "处理成功" });
+                this.$router.push({ name: "todo" });
+              })
+              .catch(error => {
+                this.$Notice.error({ title: "工单处理失败" });
+                console.log(error);
+              });
+          }
+          
         } else {
           console.log("form error");
           return false;
@@ -320,16 +355,29 @@ export default {
             suggestion: this.suggestion ? this.suggestion : btn.transition_name
           }
         };
-        this.$store
-          .dispatch("api_handle_ticket_action", data)
-          .then(resp => {
-            this.$Notice.success({ title: "处理成功" });
-            this.$router.push({ name: "todo" });
-          })
-          .catch(error => {
-            this.$Notice.error({ title: "工单处理失败" });
-            console.log(error);
-          });
+        if(btn.is_accept) {
+          this.$store
+            .dispatch("api_post_ticket_accept", data)
+            .then(resp => {
+              this.$Notice.success({ title: "处理成功" });
+              this.$router.push({ name: "todo" });
+            })
+            .catch(error => {
+              this.$Notice.error({ title: "工单处理失败" });
+              console.log(error);
+            });
+        } else {
+          this.$store
+            .dispatch("api_handle_ticket_action", data)
+            .then(resp => {
+              this.$Notice.success({ title: "处理成功" });
+              this.$router.push({ name: "todo" });
+            })
+            .catch(error => {
+              this.$Notice.error({ title: "工单处理失败" });
+              console.log(error);
+            });
+        }
       }
     }
   },
