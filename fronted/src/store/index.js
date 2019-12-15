@@ -158,7 +158,16 @@ const store = new Vuex.Store({
           reject(error)
         })
       })
-    }
+    },
+    api_post_ticket_accept: (context, data) => {
+      return new Promise((resolve, reject) => {
+        axios.put(`/api/v1/service/ticket_accept/${data.id}/`).then(resp => {
+          resolve(resp)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
   }
 })
 
