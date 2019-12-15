@@ -123,8 +123,8 @@
                     :prop="field.field_key"
                     :label="field.name || field.field_name"
                   >
-                    <tinymce v-model="detailForm[field.field_key]" :id="field.field_key" ref="tm"></tinymce>
-                    <!-- <ueditor v-if="field.field_type_id === 55" ueditorConfig="ueditorConfig" @ready="handleReady(detailForm[field.field_key])"></ueditor> -->
+                    <!-- <tinymce v-model="detailForm[field.field_key]" :id="field.field_key" ref="tm"></tinymce> -->
+                    <ueditor ueditorConfig="ueditorConfig" @ready="handleReady"></ueditor>
                   </FormItem>
                 </template>
                 <template v-else-if="field.field_attribute === 1">
@@ -181,6 +181,7 @@
 import Utils from "../../utils";
 import Validators from "../../utils/validators";
 import { Date } from "../../utils/datetime";
+import ueditor from './components/ueditor';
 
 export default {
   name: "ticket-detail",
@@ -236,18 +237,16 @@ export default {
       detailFormRules: {}
     };
   },
+  components: {
+    ueditor,
+  },
   methods: {
-    // handleReady (instance, data) {
-      // instance.setContent('')
-      // console.log(instance, data)
-      // instance.addListener('contentChange', () => {
-      //   for (let i = 0; i < this.init_state.field_list.length; i++) {
-      //     if (this.init_state.field_list[i].field_type_id === 55) {
-      //       this.newForm[this.init_state.field_list[i].field_key] = instance.getContent()
-      //     }
-      //   }
-      // })
-    // },
+    handleReady (instance) {
+      instance.setContent(this.detailForm.reason)
+      instance.addListener('contentChange', () => {
+        this.detailForm.reason = instance.getContent()
+      })
+    },
     init() {
       this.$store
         .dispatch("api_get_ticket_detail", { id: this.ticket_id })
