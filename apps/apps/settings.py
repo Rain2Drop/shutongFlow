@@ -89,7 +89,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'HOST': '127.0.0.1',
         'NAME': 'shutongflow',
-        'USER': 'shutongflow',
+        'USER': 'root',
         'PASSWORD': '123456',
         'PORT': 3306
     }
@@ -118,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'
 
 TIME_ZONE = 'Asia/Shanghai'
 
@@ -221,5 +221,14 @@ UEDITER_SETTING = {
 
 ## 以下需要根据loonlfow的启动地址，apptoken中的应用及token做相应修改
 WORKFLOWBACKENDURL = "http://127.0.0.1:6060"
-WORKFLOWTOKEN = "8cd585da-3cc6-11e8-9946-784f437daad6"
-WORKFLOWAPP="ops"
+WORKFLOWTOKEN = "980016b2-0f94-11ea-89d5-a45e60bdca31"
+WORKFLOWAPP="shutongflow"
+
+# Ali OSS
+ALI_OSS = {
+    'access_key_id': '',
+    'access_key_secret': '',
+    'endpoint': 'oss-cn-shanghai.aliyuncs.com',
+    'bucket_name': 'rain2drop-workflow',
+    'bucket_url': 'https://rain2drop-workflow.oss-cn-shanghai.aliyuncs.com/',
+}

@@ -15,8 +15,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import BasicAuthentication
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from service.serializers import LoonFlowAttachmentSerializer
-from common.upload import uploadfile
 from apps.apirequest import WorkFlowAPiRequest
+
+from service.ali_oss import Bucket
 
 
 class LoonFlowAPIView(APIView):
@@ -227,8 +228,7 @@ def upload_file(file_obj, file_type='pic'):
         file_name = format_file_name(file_name)
         # else:
         #     file_name = str(uuid.uuid1())
-        sub_folder = time.strftime("%Y%m")
-        upload_folder = os.path.join(settings.MEDIA_ROOT, 'upload', sub_folder)
+        upload_folder = os.path.join(settings.MEDIA_ROOT, 'upload')
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder)
         absolute_path = os.path.join(upload_folder, file_name) + '.%s' % file_postfix
@@ -246,7 +246,12 @@ def upload_file(file_obj, file_type='pic'):
             #         im.thumbnail((720, 720))
             #         im.save(absolute_path)
 
-            real_url = os.path.join('/media/', 'upload', sub_folder, file_name) + '.%s' % file_postfix
+            bucket = Bucket(settings.ALI_OSS['access_key_id'], settings.ALI_OSS['access_key_secret'],
+                            settings.ALI_OSS['endpoint'], settings.ALI_OSS['bucket_name'])
+            ali_oss_key = bucket.upload(absolute_path)
+            real_url = settings.ALI_OSS['bucket_url'] + ali_oss_key
+
+            os.remove(absolute_path)
             response_dict = {'original': filename, 'url': real_url, 'title': 'source_file_tile', 'state': 'SUCCESS',
                              'msg': ''}
         else:

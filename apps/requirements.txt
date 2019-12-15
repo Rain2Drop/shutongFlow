@@ -33,3 +33,4 @@ traitlets==4.3.2
 urllib3==1.22
 vine==1.1.4
 wcwidth==0.1.7
+oss2==2.9.0

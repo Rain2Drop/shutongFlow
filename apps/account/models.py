@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from common.abstract import AbastractModel
 
+
 class ShutongDept(AbastractModel):
     name = models.CharField(verbose_name=u'部门名称', max_length=100)
     parent = models.IntegerField(verbose_name=u'上级部门', default=0)
@@ -9,6 +10,10 @@ class ShutongDept(AbastractModel):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = "部门"
+        verbose_name_plural = verbose_name
 
 
 class ShutongRole(AbastractModel):
@@ -20,14 +25,16 @@ class ShutongRole(AbastractModel):
 
     class Meta:
         db_table = 'role'
+        verbose_name = "角色"
+        verbose_name_plural = verbose_name
 
 
 class ShutongUser(AbstractUser):
     username = models.CharField(verbose_name=u'用户名', max_length=100, unique=True)
-    alias = models.CharField(verbose_name=u'中文名称', max_length=100, blank=True, null=True)
-    email = models.EmailField(verbose_name=u'邮箱', max_length=100)
-    phone = models.IntegerField(verbose_name=u'电话', blank=True, null=True)
-    dept = models.IntegerField(verbose_name=u'部门', default=0)
+    alias = models.CharField(verbose_name=u'姓名', max_length=100, default='')
+    email = models.EmailField(verbose_name=u'邮箱', max_length=100, default='')
+    phone = models.IntegerField(verbose_name=u'电话', default=0)
+    dept = models.ForeignKey('ShutongDept', db_column='dept', verbose_name=u'部门', on_delete=models.CASCADE)
     is_active = models.BooleanField(verbose_name=u'己激活', default=True)
     is_superuser = models.BooleanField(verbose_name=u'超级管理员', default=False)
     is_staff = models.BooleanField(verbose_name=u'允许登录admin', default=False)
@@ -40,6 +47,8 @@ class ShutongUser(AbstractUser):
 
     class Meta:
         db_table = 'user'
+        verbose_name = "用户"
+        verbose_name_plural = verbose_name
 
 
 class ShutongUserRole(AbastractModel):
@@ -48,3 +57,7 @@ class ShutongUserRole(AbastractModel):
 
     def __str__(self):
         return '{}-{}'.format(self.user, self.role)
+
+    class Meta:
+        verbose_name = "用户角色"
+        verbose_name_plural = verbose_name
