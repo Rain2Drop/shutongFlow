@@ -78,6 +78,24 @@ class LoonFlowCreateTicketViewSet(ViewSet):
             return Response({'code': resp['code'], 'data': None, 'msg': resp['msg']}, status=status_resp)
 
 
+class LoonFlowUpdateTicketViewSet(ViewSet):
+    authentication_classes = [JSONWebTokenAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def partial_update(self, request, pk=None):
+        request.data['username'] = request.user.username
+        ins = WorkFlowAPiRequest(username=self.request.user.username)
+        rstatus, resp = ins.getdata(parameters={}, method='patch', url='/api/v1.0/tickets/{}/fields'.format(pk),
+                                    data=request.data)
+        if resp['code'] == 0:
+            status_resp = status.HTTP_200_OK
+            return Response({'code': resp['code'], 'data': resp['data'], 'msg': resp['msg']},
+                            status=status_resp)
+        else:
+            status_resp = status.HTTP_400_BAD_REQUEST
+            return Response({'code': resp['code'], 'data': None, 'msg': resp['msg']}, status=status_resp)
+
+
 class LoonFlowTicketViewSet(ViewSet):
     authentication_classes = [JSONWebTokenAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]

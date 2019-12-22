@@ -87,7 +87,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'HOST': '127.0.0.1',
+        'HOST': 'host.docker.internal',
         'NAME': 'shutongflow',
         'USER': 'root',
         'PASSWORD': '123456',
@@ -220,7 +220,7 @@ UEDITER_SETTING = {
 
 
 ## 以下需要根据loonlfow的启动地址，apptoken中的应用及token做相应修改
-WORKFLOWBACKENDURL = "http://127.0.0.1:6060"
+WORKFLOWBACKENDURL = "http://localhost:6060"
 WORKFLOWTOKEN = "980016b2-0f94-11ea-89d5-a45e60bdca31"
 WORKFLOWAPP="shutongflow"
 
