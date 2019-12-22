@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 from service.views import LoonFlowAPIView
 from service.views import LoonFlowInitStateViewSet
+from service.views import LoonFlowUpdateTicketViewSet
 from service.views import LoonFlowCreateTicketViewSet
 from service.views import LoonFlowTicketAcceptViewSet
 from service.views import LoonFlowTicketViewSet
@@ -15,6 +16,7 @@ from service.views import ueditor_uploadimage
 router = DefaultRouter()
 router.register('init_state', LoonFlowInitStateViewSet, 'init_state')
 router.register('create_ticket', LoonFlowCreateTicketViewSet, 'create_ticket')
+router.register('update_ticket', LoonFlowUpdateTicketViewSet, 'update_ticket')
 router.register('tickets', LoonFlowTicketViewSet, 'tickets')
 router.register('ticket_accept', LoonFlowTicketAcceptViewSet, 'ticket_accept')
 router.register('steps', LoonFlowStepViewSet, 'steps')
