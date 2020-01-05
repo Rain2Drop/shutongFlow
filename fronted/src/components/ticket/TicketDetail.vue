@@ -23,7 +23,7 @@
           <template slot="title">
             <span style="font-weight: 700;">
               <Icon type="android-clipboard"></Icon>
-              <span>{{workflow.description}}</span>
+              <span>{{workflow.name}}</span>
             </span>
           </template>
           <Row>
@@ -33,7 +33,7 @@
                 :key="index"
                 :md="{span: field.field_type_id === 55 ? 22 : 11}"
               >
-                <template v-if="field.field_attribute === 2">
+                <template v-if="/2|3/.test(field.field_attribute)">
                   <FormItem
                     v-if="field.field_type_id === 5"
                     :label="field.name || field.field_name"
@@ -123,21 +123,50 @@
                     :prop="field.field_key"
                     :label="field.name || field.field_name"
                   >
-                    <!-- <tinymce v-model="detailForm[field.field_key]" :id="field.field_key" ref="tm"></tinymce> -->
-                    <ueditor ueditorConfig="ueditorConfig" @ready="handleReady"></ueditor>
+                    <ueditor @ready="handleReady"></ueditor>
+                  </FormItem>
+                  <FormItem
+                    v-else-if="field.field_type_id === 80"
+                    :prop="field.field_key"
+                    :label="field.name || field.field_name"
+                  >
+                    <el-upload
+                      action="/api/v1/service/ueditor/?action=uploadfile&encode=utf-8"
+                      :on-success="onsuccess"
+                      :on-remove="onremove"
+                      :on-preview="onpreview"
+                      name="upfile"
+                      :file-list="fileList">
+                      <Button type="primary" size="small">点击上传</Button>
+                    </el-upload>
+                  </FormItem>
+                  <FormItem
+                    v-else-if="field.field_type_id === 90"
+                    :prop="field.field_key"
+                    :label="field.name || field.field_name"
+                  >
+                    <el-upload
+                      action="/api/v1/service/ueditor/?action=uploadimage"
+                      :on-success="imgOnsuccess"
+                      :on-remove="imgOnremove"
+                      :on-preview="function(){Dialog = true}"
+                      accept="image/*"
+                      name="upfile"
+                      list-type="picture-card"
+                      :file-list="imgFileList">
+                      <i class="el-icon-plus"></i>
+                    </el-upload>
+                    <el-dialog
+                      :visible.sync="Dialog" 
+                      :modal="false"
+                      top="10vh">
+                      <img width="100%" :src="imgFileList[0] ? imgFileList[0].url : ''" alt="图片">
+                    </el-dialog>
                   </FormItem>
                 </template>
                 <template v-else-if="field.field_attribute === 1">
                   <FormItem :label="field.name || field.field_name">
                     <div class="disabled_field" v-html="displaySelectKey(field)"></div>
-                  </FormItem>
-                </template>
-                <template v-else-if="field.field_attribute === 2 || field.field_attribute === 3">
-                  <FormItem :label="field.name || field.field_name">
-                    <Input
-                      v-model="field.field_value"
-                      :placeholder="$t(`field_label.${field.field_key}`)"
-                    ></Input>
                   </FormItem>
                 </template>
               </Col>
@@ -234,17 +263,61 @@ export default {
       transitions: [],
       suggestion: "",
       detailForm: {},
-      detailFormRules: {}
+      detailFormRules: {},
+      fileList: [],
+      imgFileList: [],
+      Dialog: false
     };
   },
   components: {
     ueditor,
   },
   methods: {
+    onsuccess(response, file, fileList) {
+      if (response.state != 'SUCCESS') {
+        this.$Notice.error({title: '上传失败'})
+        this.fileList = []
+      } else {
+        this.fileList = [{
+          name: file.name,
+          url: response.url
+        }]
+        let item = this.shortFieldList.find(i => i.field_type_id === 80)
+        this.detailForm[item.field_key] = response.url
+      }
+    },
+    onremove (file, fileList) {
+      let item = this.shortFieldList.find(i => i.field_type_id === 80)
+      this.detailForm[item.field_key] = ''
+    },
+    imgOnsuccess (response, file, fileList) {
+      console.log(response)
+      if (response.state != 'SUCCESS') {
+        this.$Notice.error({title: '上传失败'})
+        this.imgFileList = []
+      } else {
+        this.imgFileList = [file]
+        let item = this.shortFieldList.find(i => i.field_type_id === 90)
+        this.detailForm[item.field_key] = response.url
+      }
+    },
+    imgOnremove (file, fileList) {
+      let item = this.shortFieldList.find(i => i.field_type_id === 90)
+      this.detailForm[item.field_key] = ''
+    },
+    onpreview (file) {
+      open(file.url)
+    },
     handleReady (instance) {
-      instance.setContent(this.detailForm.reason)
+      let field_key
+      for (let i = 0; i < this.shortFieldList.length; i++) {
+        if (this.shortFieldList[i].field_type_id === 55) {
+          field_key = this.shortFieldList[i].field_key
+        }
+      }
+      instance.setContent(this.detailForm[field_key] || '')
       instance.addListener('contentChange', () => {
-        this.detailForm.reason = instance.getContent()
+        this.detailForm[field_key] = instance.getContent()
       })
     },
     init() {
@@ -252,6 +325,7 @@ export default {
         .dispatch("api_get_ticket_detail", { id: this.ticket_id })
         .then(resp => {
           this.ticket = resp.data.data.value;
+          console.log(this.ticket)
           const workflow_id = this.ticket.workflow_id;
           this.$store.dispatch("api_workflows").then(resp => {
             let workflows = resp.data.data.value;
@@ -287,6 +361,22 @@ export default {
           this.$Notice.error({ title: "接口错误或数据不存在！" });
         });
     },
+    submit(btn, data) {
+      let p
+      if(btn.is_accept) {
+        p = this.$store.dispatch("api_post_ticket_accept", data)
+      } else {
+        p = this.$store.dispatch("api_handle_ticket_action", data)
+      }
+      p.then(resp => {
+        this.$Notice.success({ title: "处理成功" });
+        this.$router.push({ name: "todo" });
+      })
+      .catch(error => {
+        this.$Notice.error({ title: "工单处理失败" });
+        console.log(error);
+      });
+    },
     handleTicketTransition(formName, btn) {
       console.log(this.detailForm, this.detailFormRules, btn)
       this.$refs[formName].validate(valid => {
@@ -317,30 +407,17 @@ export default {
             }
           }
           Object.assign(data.data, this.detailForm);
-          if(btn.is_accept) {
-            this.$store
-              .dispatch("api_post_ticket_accept", data)
-              .then(resp => {
-                this.$Notice.success({ title: "处理成功" });
-                this.$router.push({ name: "todo" });
-              })
-              .catch(error => {
-                this.$Notice.error({ title: "工单处理失败" });
-                console.log(error);
-              });
-          } else {
-            this.$store
-              .dispatch("api_handle_ticket_action", data)
-              .then(resp => {
-                this.$Notice.success({ title: "处理成功" });
-                this.$router.push({ name: "todo" });
-              })
-              .catch(error => {
-                this.$Notice.error({ title: "工单处理失败" });
-                console.log(error);
-              });
-          }
-          
+          this.submit(btn, data)
+          this.$store
+            .dispatch("api_patch_update_ticket", data)
+            .then(resp => {
+              // this.$Notice.success({ title: "保存成功" });
+              // this.$router.push({ name: "todo" });
+            })
+            .catch(error => {
+              this.$Notice.error({ title: "工单保存失败" });
+              console.log(error);
+            });
         } else {
           console.log("form error");
           return false;
@@ -354,29 +431,7 @@ export default {
             suggestion: this.suggestion ? this.suggestion : btn.transition_name
           }
         };
-        if(btn.is_accept) {
-          this.$store
-            .dispatch("api_post_ticket_accept", data)
-            .then(resp => {
-              this.$Notice.success({ title: "处理成功" });
-              this.$router.push({ name: "todo" });
-            })
-            .catch(error => {
-              this.$Notice.error({ title: "工单处理失败" });
-              console.log(error);
-            });
-        } else {
-          this.$store
-            .dispatch("api_handle_ticket_action", data)
-            .then(resp => {
-              this.$Notice.success({ title: "处理成功" });
-              this.$router.push({ name: "todo" });
-            })
-            .catch(error => {
-              this.$Notice.error({ title: "工单处理失败" });
-              console.log(error);
-            });
-        }
+        this.submit(btn, data)
       }
     }
   },
@@ -386,15 +441,7 @@ export default {
     },
     displaySelectKey(argument) {
       return argument => {
-        if (argument.field_type_id === 45) {
-          return argument.field_choice[argument.field_value];
-        }
-        return argument.field_value;
-      };
-    },
-    displaySelectKey(argument) {
-      return argument => {
-        if (argument.field_type_id === 45) {
+        if (/35|45/.test(argument.field_type_id)) {
           return argument.field_choice[argument.field_value];
         }
         return argument.field_value;
@@ -403,7 +450,7 @@ export default {
     choiceFieldDisplay () {
       let result
       this.ticket.field_list.filter(item => {
-        if (item.field_type_id === 35) {
+        if (/35|45/.test(item.field_type_id)) {
           let keys = Object.keys(item.field_choice);
           for (let i = 0; i < keys.length; i++) {
             if (item.value === keys[i] || item.field_value === keys[i]) {
@@ -464,7 +511,7 @@ export default {
     ticket() {
       let fieldList = this.ticket.field_list;
       for (let i = 0; i < fieldList.length; i++) {
-        if (fieldList[i].field_attribute === 2) {
+        if (/2|3/.test(fieldList[i].field_attribute)) {
           // 动态设置detailForm表单默认值
           this.detailForm[fieldList[i].field_key] =
             fieldList[i].value || fieldList[i].field_value;
@@ -489,6 +536,22 @@ export default {
             this.detailFormRules[fieldList[i].field_type_id] = [
               { required: true, type: "boolean", trigger: "blur" }
             ];
+          } else if (fieldList[i].field_type_id === 80) {
+            let value = fieldList[i].value || fieldList[i].field_value
+            if(value) {
+              this.fileList = [{
+                name: value,
+                url: value
+              }]
+            }
+          } else if (fieldList[i].field_type_id === 90) {
+            let value = fieldList[i].value || fieldList[i].field_value
+            if(value) {
+              this.imgFileList = [{
+                name: value,
+                url: value
+              }]
+            }
           }
         }
       }

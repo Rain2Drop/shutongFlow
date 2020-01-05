@@ -16,7 +16,7 @@
             <Row>
               <Col :md="{span: item.field_type_id === 55 ? 22 : 11}" v-for="(item, index) in init_state.field_list" :key="index">
                 <FormItem :label="item.name || item.field_name" :prop="item.field_key">
-                  <Input v-if="item.field_type_id === 5" v-model="newForm[item.field_key]" :placeholder="$t(`field_label.${item.field_key}`)"></Input>
+                  <Input v-if="item.field_type_id === 5" v-model="newForm[item.field_key]" :placeholder="$t(`field_label.${item.field_key}`)"/>
                   <InputNumber v-if="item.field_type_id === 15" v-model="newForm[item.field_key]" :min="0" :step="0.5" style="width: 100%;"></InputNumber>
                   <DatePicker v-if="item.field_type_id === 30" v-model="newForm[item.field_key]" type="datetime" format="yyyy-MM-dd HH:mm:ss" style="width: 100%;" :placeholder="$t(`field_label.${item.field_key}`)"></DatePicker>
                   <!-- TODO: ElementUI/iView对于动态v-model都有BUG，改用单选菜单方式 -->
@@ -33,13 +33,41 @@
                     <Option v-for="(choice, i) in Object.keys(item.field_choice)" :key="i" :value="choice">{{item.field_choice[choice]}}</Option>
                   </Select>
                   <!-- <tinymce v-if="item.field_type_id === 55" v-model="newForm[item.field_key]" :id="item.field_key" :other_option="tinymceOptions"></tinymce> -->
-                  <ueditor v-if="item.field_type_id === 55" ueditorConfig="ueditorConfig" @ready="handleReady"></ueditor>
+                  <ueditor v-if="item.field_type_id === 55" @ready="handleReady"></ueditor>
                   <Select v-if="item.field_type_id === 60" v-model="newForm[item.field_key]" :placeholder="$t(`field_label.${item.field_key}`)">
                     <Option v-for="(user, index) in accountList" :key="index" :value="user.username">{{user.alias}}</Option>
                   </Select>
                   <Select v-if="item.field_type_id === 70" v-model="newForm[item.field_key]" multiple :placeholder="$t(`field_label.${item.field_key}`)">
                     <Option v-for="(user, index) in accountList" :key="index" :value="user.username">{{user.alias}}</Option>
                   </Select>
+                  <el-upload
+                    v-if="item.field_type_id === 80"
+                    action="/api/v1/service/ueditor/?action=uploadfile&encode=utf-8"
+                    :on-success="onsuccess"
+                    :on-remove="onremove"
+                    name="upfile"
+                    :file-list="fileList">
+                    <Button type="primary" size="small">点击上传</Button>
+                  </el-upload>
+                  <el-upload
+                    v-if="item.field_type_id === 90"
+                    action="/api/v1/service/ueditor/?action=uploadimage"
+                    :on-success="imgOnsuccess"
+                    :on-remove="imgOnremove"
+                    :on-preview="function(){Dialog = true}"
+                    accept="image/*"
+                    name="upfile"
+                    list-type="picture-card"
+                    :file-list="imgFileList">
+                    <i class="el-icon-plus"></i>
+                  </el-upload>
+                  <el-dialog
+                    v-if="item.field_type_id === 90"
+                    :visible.sync="Dialog" 
+                    :modal="false"
+                    top="10vh">
+                    <img width="100%" :src="imgFileList[0] ? imgFileList[0].url : ''" alt="图片">
+                  </el-dialog>
                 </FormItem>
               </Col>
             </Row>
@@ -79,10 +107,43 @@ export default {
       workflow: null,
       init_state: {},
       workflowTitle: '',
-      ueditorConfig: {}
+      ueditorConfig: {},
+      fileList: [],
+      imgFileList: [],
+      Dialog: false
     }
   },
   methods: {
+    onsuccess (response, file, fileList) {
+      console.log(response)
+      if (response.state != 'SUCCESS') {
+        this.$Notice.error({title: '上传失败'})
+        this.fileList = []
+      } else {
+        this.fileList = [file]
+        let item = this.init_state.field_list.find(i => i.field_type_id === 80)
+        this.newForm[item.field_key] = response.url
+      }
+    },
+    onremove (file, fileList) {
+      let item = this.init_state.field_list.find(i => i.field_type_id === 80)
+      this.newForm[item.field_key] = ''
+    },
+    imgOnsuccess (response, file, fileList) {
+      console.log(response)
+      if (response.state != 'SUCCESS') {
+        this.$Notice.error({title: '上传失败'})
+        this.imgFileList = []
+      } else {
+        this.imgFileList = [file]
+        let item = this.init_state.field_list.find(i => i.field_type_id === 90)
+        this.newForm[item.field_key] = response.url
+      }
+    },
+    imgOnremove (file, fileList) {
+      let item = this.init_state.field_list.find(i => i.field_type_id === 90)
+      this.newForm[item.field_key] = ''
+    },
     init () {
       this.loading = true
       this.$store.dispatch('api_workflows').then(resp => {
@@ -103,6 +164,13 @@ export default {
           })
         }
         this.loading = false
+        // 假数据
+        // this.init_state.field_list.splice(this.init_state.field_list.length - 1, 0, {
+        //   field_key: 'img',
+        //   field_name: '图片',
+        //   field_type_id: 90,
+        //   field_attribute: 3
+        // })
       })
     },
     handleButton (formName, id) {
@@ -121,6 +189,7 @@ export default {
               data[this.init_state.field_list[i].field_key] = data[this.init_state.field_list[i].field_key].join(',')
             }
           }
+          console.log(data)
           this.$store.dispatch('api_post_ticket', data).then(resp => {
             this.$Notice.success({title: '创建成功'})
             this.$router.push({name: 'myself'})
@@ -137,6 +206,7 @@ export default {
       instance.addListener('contentChange', () => {
         for (let i = 0; i < this.init_state.field_list.length; i++) {
           if (this.init_state.field_list[i].field_type_id === 55) {
+            // console.log(this.init_state.field_list[i].field_key)
             this.newForm[this.init_state.field_list[i].field_key] = instance.getContent()
           }
         }
