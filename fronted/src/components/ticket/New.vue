@@ -164,13 +164,6 @@ export default {
           })
         }
         this.loading = false
-        // 假数据
-        // this.init_state.field_list.splice(this.init_state.field_list.length - 1, 0, {
-        //   field_key: 'img',
-        //   field_name: '图片',
-        //   field_type_id: 90,
-        //   field_attribute: 3
-        // })
       })
     },
     handleButton (formName, id) {
@@ -189,7 +182,6 @@ export default {
               data[this.init_state.field_list[i].field_key] = data[this.init_state.field_list[i].field_key].join(',')
             }
           }
-          console.log(data)
           this.$store.dispatch('api_post_ticket', data).then(resp => {
             this.$Notice.success({title: '创建成功'})
             this.$router.push({name: 'myself'})
