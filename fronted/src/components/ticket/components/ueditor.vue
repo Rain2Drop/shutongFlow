@@ -22,6 +22,9 @@ export default {
       default: function () {
         return {}
       }
+    },
+    field_key: {
+      type: String
     }
   },
   mounted () {
@@ -33,7 +36,7 @@ export default {
         this.instance = UE.getEditor(this.ueditorName, this.ueditorConfig);
         // 绑定事件，当 UEditor 初始化完成后，将编辑器实例通过自定义的 ready 事件交出去
         this.instance.addListener('ready', () => {
-          this.$emit('ready', this.instance)
+          this.$emit('ready', this.instance, this.field_key)
         });
       })
     },

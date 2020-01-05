@@ -123,7 +123,7 @@
                     :prop="field.field_key"
                     :label="field.name || field.field_name"
                   >
-                    <ueditor @ready="handleReady"></ueditor>
+                    <ueditor @ready="handleReady" :field_key="field.field_key"></ueditor>
                   </FormItem>
                   <FormItem
                     v-else-if="field.field_type_id === 80"
@@ -136,8 +136,8 @@
                       :on-remove="onremove"
                       :on-preview="onpreview"
                       name="upfile"
-                      :file-list="fileList">
-                      <Button type="primary" size="small">点击上传</Button>
+                      :file-list="detailForm[field.field_key]">
+                      <Button type="primary" size="small" @click="getItem(field)">点击上传</Button>
                     </el-upload>
                   </FormItem>
                   <FormItem
@@ -146,21 +146,22 @@
                     :label="field.name || field.field_name"
                   >
                     <el-upload
+                      @click.native="getItem(field)"
                       action="/api/v1/service/ueditor/?action=uploadimage"
-                      :on-success="imgOnsuccess"
-                      :on-remove="imgOnremove"
-                      :on-preview="function(){Dialog = true}"
+                      :on-success="onsuccess"
+                      :on-remove="onremove"
+                      :on-preview="imgOnpreview"
                       accept="image/*"
                       name="upfile"
                       list-type="picture-card"
-                      :file-list="imgFileList">
+                      :file-list="detailForm[field.field_key]">
                       <i class="el-icon-plus"></i>
                     </el-upload>
                     <el-dialog
                       :visible.sync="Dialog" 
                       :modal="false"
                       top="10vh">
-                      <img width="100%" :src="imgFileList[0] ? imgFileList[0].url : ''" alt="图片">
+                      <img width="100%" :src="imgSrc" alt="图片">
                     </el-dialog>
                   </FormItem>
                 </template>
@@ -264,57 +265,47 @@ export default {
       suggestion: "",
       detailForm: {},
       detailFormRules: {},
-      fileList: [],
-      imgFileList: [],
-      Dialog: false
+      Dialog: false,
+      imgSrc: '',
+      item: {}
     };
   },
   components: {
     ueditor,
   },
   methods: {
+    getItem (item) {
+      this.item = item
+    },
     onsuccess(response, file, fileList) {
+      console.log(fileList)
       if (response.state != 'SUCCESS') {
         this.$Notice.error({title: '上传失败'})
-        this.fileList = []
-      } else {
-        this.fileList = [{
-          name: file.name,
-          url: response.url
-        }]
-        let item = this.shortFieldList.find(i => i.field_type_id === 80)
-        this.detailForm[item.field_key] = response.url
+        let index = fileList.findIndex(i => i.url == file.url)
+        fileList.splice(index, 1)
       }
+      this.item.field_value = fileList
     },
     onremove (file, fileList) {
-      let item = this.shortFieldList.find(i => i.field_type_id === 80)
-      this.detailForm[item.field_key] = ''
-    },
-    imgOnsuccess (response, file, fileList) {
-      console.log(response)
-      if (response.state != 'SUCCESS') {
-        this.$Notice.error({title: '上传失败'})
-        this.imgFileList = []
-      } else {
-        this.imgFileList = [file]
-        let item = this.shortFieldList.find(i => i.field_type_id === 90)
-        this.detailForm[item.field_key] = response.url
+      console.log(file, fileList)
+      let arr = this.shortFieldList
+      for(let i = 0; i < arr.length; i++) {
+        if(Array.isArray(arr[i].field_value)) {
+          let index = arr[i].field_value.findIndex(i => i.url == file.url)
+          if(index >= 0) {
+            fileList.splice(index, 1)
+          }
+        }
       }
-    },
-    imgOnremove (file, fileList) {
-      let item = this.shortFieldList.find(i => i.field_type_id === 90)
-      this.detailForm[item.field_key] = ''
     },
     onpreview (file) {
       open(file.url)
     },
-    handleReady (instance) {
-      let field_key
-      for (let i = 0; i < this.shortFieldList.length; i++) {
-        if (this.shortFieldList[i].field_type_id === 55) {
-          field_key = this.shortFieldList[i].field_key
-        }
-      }
+    imgOnpreview (file) {
+      this.Dialog = true
+      this.imgSrc = file.url
+    },
+    handleReady (instance, field_key) {
       instance.setContent(this.detailForm[field_key] || '')
       instance.addListener('contentChange', () => {
         this.detailForm[field_key] = instance.getContent()
@@ -379,59 +370,59 @@ export default {
     },
     handleTicketTransition(formName, btn) {
       console.log(this.detailForm, this.detailFormRules, btn)
-      this.$refs[formName].validate(valid => {
-        if (valid) {
-          console.log('btn',btn)
-          let data = {
-            id: this.ticket.id,
-            data: {
-              transition_id: btn.transition_id,
-              suggestion: this.suggestion
-                ? this.suggestion
-                : btn.transition_name
-            }
-          };
-          let formData = {};
-          let detailFormKeys = Object.keys(this.detailForm);
-          let fieldList = this.ticket.field_list;
-          for (let i = 0; i < fieldList.length; i++) {
-            for (let j = 0; j < detailFormKeys.length; j++) {
-              if (
-                [25, 30].includes(fieldList[i].field_type_id) &&
-                fieldList[i].field_key === detailFormKeys[j]
-              ) {
-                this.detailForm[detailFormKeys[j]] = this.detailForm[
-                  detailFormKeys[j]
-                ].format("yyyy-MM-dd hh:mm:ss");
-              }
-            }
+      // this.$refs[formName].validate(valid => {
+      //   if (!valid) return
+        console.log('btn',btn)
+        let info = {
+          id: this.ticket.id,
+          data: {
+            transition_id: btn.transition_id,
+            suggestion: this.suggestion
+              ? this.suggestion
+              : btn.transition_name
           }
-          Object.assign(data.data, this.detailForm);
-          this.submit(btn, data)
-          this.$store
-            .dispatch("api_patch_update_ticket", data)
-            .then(resp => {
-              // this.$Notice.success({ title: "保存成功" });
-              // this.$router.push({ name: "todo" });
+        };
+        Object.assign(info.data, this.detailForm);
+        let fieldList = this.ticket.field_list;
+        for (let i = 0; i < Object.keys(fieldList).length; i++) {
+          let item = fieldList[i]
+          let data = info.data
+          if ([25, 30].includes(item.field_type_id) && data[item.field_key]) {
+            data[item.field_key] = data[item.field_key].format("yyyy-MM-dd hh:mm:ss")
+          }
+          if ([70].includes(item.field_type_id) && data[item.field_key]) {
+            data[item.field_key] = data[item.field_key].join(',')
+          }
+          if ([80, 90].includes(item.field_type_id) && data[item.field_key]) {
+            let arr = data[item.field_key].map(i => {
+              return {
+                name: i.name,
+                url: i.response ? i.response.url : i.url
+              }
             })
-            .catch(error => {
-              this.$Notice.error({ title: "工单保存失败" });
-              console.log(error);
-            });
-        } else {
-          console.log("form error");
-          return false;
+            data[item.field_key] = JSON.stringify(arr)
+          }
         }
-      });
+        this.submit(btn, info)
+        this.$store
+          .dispatch("api_patch_update_ticket", info)
+          .then(resp => {
+            console.log(resp)
+          })
+          .catch(error => {
+            this.$Notice.error({ title: "工单保存失败" });
+            console.log(error);
+          });
+      // });
       if (Object.keys(this.detailForm).length === 0) {
-        let data = {
+        let info = {
           id: this.ticket.id,
           data: {
             transition_id: btn.transition_id,
             suggestion: this.suggestion ? this.suggestion : btn.transition_name
           }
         };
-        this.submit(btn, data)
+        this.submit(btn, info)
       }
     }
   },
@@ -443,6 +434,26 @@ export default {
       return argument => {
         if (/35|45/.test(argument.field_type_id)) {
           return argument.field_choice[argument.field_value];
+        }
+        if (/80/.test(argument.field_type_id)) {
+          if(typeof(argument.field_value) == 'string') {
+            argument.field_value = JSON.parse(argument.field_value)
+          }
+          let html = ''
+          argument.field_value.forEach(item => {
+            html += `<div><a href="${item.url}" target="_blank">${item.name}</a></div>`
+          })
+          return html
+        }
+        if (/90/.test(argument.field_type_id)) {
+          if(typeof(argument.field_value) == 'string') {
+            argument.field_value = JSON.parse(argument.field_value)
+          }
+          let html = ''
+          argument.field_value.forEach(item => {
+            html += `<img src="${item.url}"></img>`
+          })
+          return html
         }
         return argument.field_value;
       };
@@ -536,21 +547,10 @@ export default {
             this.detailFormRules[fieldList[i].field_type_id] = [
               { required: true, type: "boolean", trigger: "blur" }
             ];
-          } else if (fieldList[i].field_type_id === 80) {
+          } else if (/80|90/.test(fieldList[i].field_type_id)) {
             let value = fieldList[i].value || fieldList[i].field_value
             if(value) {
-              this.fileList = [{
-                name: value,
-                url: value
-              }]
-            }
-          } else if (fieldList[i].field_type_id === 90) {
-            let value = fieldList[i].value || fieldList[i].field_value
-            if(value) {
-              this.imgFileList = [{
-                name: value,
-                url: value
-              }]
+              this.detailForm[fieldList[i].field_key] = JSON.parse(value)
             }
           }
         }
