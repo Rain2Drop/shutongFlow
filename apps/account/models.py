@@ -52,8 +52,10 @@ class ShutongUser(AbstractUser):
 
 
 class ShutongUserRole(AbastractModel):
-    user = models.IntegerField(verbose_name=u'用户')
-    role = models.IntegerField(verbose_name=u'角色')
+    user = models.ForeignKey('ShutongUser', db_column='user', verbose_name=u'用户', on_delete=models.CASCADE)
+    role = models.ForeignKey('ShutongRole', db_column='role', verbose_name=u'角色', on_delete=models.CASCADE)
+    # user = models.IntegerField(verbose_name=u'用户')
+    # role = models.IntegerField(verbose_name=u'角色')
 
     def __str__(self):
         return '{}-{}'.format(self.user, self.role)
