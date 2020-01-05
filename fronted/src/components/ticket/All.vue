@@ -36,7 +36,7 @@ export default {
             width: 150,
             render: (h, params) => {
               return h('div', [
-                h('span', {}, params.row.workflow.workflow_name)
+                h('span', {}, params.row.workflow_info.workflow_name)
               ])
             }
           },

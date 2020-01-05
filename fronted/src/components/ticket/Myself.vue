@@ -36,7 +36,7 @@ export default {
             width: 150,
             render: (h, params) => {
               return h('div', [
-                h('span', {}, params.row.workflow.workflow_name)
+                h('span', {}, params.row.workflow_info.workflow_name)
               ])
             }
           },
@@ -91,6 +91,7 @@ export default {
     init () {
       this.$store.dispatch('api_get_ticket_list', {category: 'owner'}).then(resp => {
         this.datatable.data = resp.data.data.value
+        console.log('this.datatable.data', this.datatable.data)
         this.total = resp.data.data.total
       }).catch(error => {
         console.log(error)

@@ -23,7 +23,7 @@
           <template slot="title">
             <span style="font-weight: 700;">
               <Icon type="android-clipboard"></Icon>
-              <span>{{workflow.description}}</span>
+              <span>{{workflow.name}}</span>
             </span>
           </template>
           <Row>
@@ -33,7 +33,7 @@
                 :key="index"
                 :md="{span: field.field_type_id === 55 ? 22 : 11}"
               >
-                <template v-if="field.field_attribute === 2">
+                <template v-if="/2|3/.test(field.field_attribute)">
                   <FormItem
                     v-if="field.field_type_id === 5"
                     :label="field.name || field.field_name"
@@ -123,21 +123,51 @@
                     :prop="field.field_key"
                     :label="field.name || field.field_name"
                   >
-                    <!-- <tinymce v-model="detailForm[field.field_key]" :id="field.field_key" ref="tm"></tinymce> -->
-                    <ueditor ueditorConfig="ueditorConfig" @ready="handleReady"></ueditor>
+                    <ueditor @ready="handleReady" :field_key="field.field_key"></ueditor>
+                  </FormItem>
+                  <FormItem
+                    v-else-if="field.field_type_id === 80"
+                    :prop="field.field_key"
+                    :label="field.name || field.field_name"
+                  >
+                    <el-upload
+                      action="/api/v1/service/ueditor/?action=uploadfile&encode=utf-8"
+                      :on-success="onsuccess"
+                      :on-remove="onremove"
+                      :on-preview="onpreview"
+                      name="upfile"
+                      :file-list="detailForm[field.field_key]">
+                      <Button type="primary" size="small" @click="getItem(field)">点击上传</Button>
+                    </el-upload>
+                  </FormItem>
+                  <FormItem
+                    v-else-if="field.field_type_id === 90"
+                    :prop="field.field_key"
+                    :label="field.name || field.field_name"
+                  >
+                    <el-upload
+                      @click.native="getItem(field)"
+                      action="/api/v1/service/ueditor/?action=uploadimage"
+                      :on-success="onsuccess"
+                      :on-remove="onremove"
+                      :on-preview="imgOnpreview"
+                      accept="image/*"
+                      name="upfile"
+                      list-type="picture-card"
+                      :file-list="detailForm[field.field_key]">
+                      <i class="el-icon-plus"></i>
+                    </el-upload>
+                    <el-dialog
+                      :visible.sync="Dialog" 
+                      :modal="false"
+                      top="10vh">
+                      <img width="100%" :src="imgSrc" alt="图片">
+                    </el-dialog>
                   </FormItem>
                 </template>
                 <template v-else-if="field.field_attribute === 1">
                   <FormItem :label="field.name || field.field_name">
                     <div class="disabled_field" v-html="displaySelectKey(field)"></div>
-                  </FormItem>
-                </template>
-                <template v-else-if="field.field_attribute === 2 || field.field_attribute === 3">
-                  <FormItem :label="field.name || field.field_name">
-                    <Input
-                      v-model="field.field_value"
-                      :placeholder="$t(`field_label.${field.field_key}`)"
-                    ></Input>
                   </FormItem>
                 </template>
               </Col>
@@ -234,17 +264,51 @@ export default {
       transitions: [],
       suggestion: "",
       detailForm: {},
-      detailFormRules: {}
+      detailFormRules: {},
+      Dialog: false,
+      imgSrc: '',
+      item: {}
     };
   },
   components: {
     ueditor,
   },
   methods: {
-    handleReady (instance) {
-      instance.setContent(this.detailForm.reason)
+    getItem (item) {
+      this.item = item
+    },
+    onsuccess(response, file, fileList) {
+      console.log(fileList)
+      if (response.state != 'SUCCESS') {
+        this.$Notice.error({title: '上传失败'})
+        let index = fileList.findIndex(i => i.url == file.url)
+        fileList.splice(index, 1)
+      }
+      this.item.field_value = fileList
+    },
+    onremove (file, fileList) {
+      console.log(file, fileList)
+      let arr = this.shortFieldList
+      for(let i = 0; i < arr.length; i++) {
+        if(Array.isArray(arr[i].field_value)) {
+          let index = arr[i].field_value.findIndex(i => i.url == file.url)
+          if(index >= 0) {
+            fileList.splice(index, 1)
+          }
+        }
+      }
+    },
+    onpreview (file) {
+      open(file.url)
+    },
+    imgOnpreview (file) {
+      this.Dialog = true
+      this.imgSrc = file.url
+    },
+    handleReady (instance, field_key) {
+      instance.setContent(this.detailForm[field_key] || '')
       instance.addListener('contentChange', () => {
-        this.detailForm.reason = instance.getContent()
+        this.detailForm[field_key] = instance.getContent()
       })
     },
     init() {
@@ -252,6 +316,7 @@ export default {
         .dispatch("api_get_ticket_detail", { id: this.ticket_id })
         .then(resp => {
           this.ticket = resp.data.data.value;
+          console.log(this.ticket)
           const workflow_id = this.ticket.workflow_id;
           this.$store.dispatch("api_workflows").then(resp => {
             let workflows = resp.data.data.value;
@@ -287,96 +352,77 @@ export default {
           this.$Notice.error({ title: "接口错误或数据不存在！" });
         });
     },
+    submit(btn, data) {
+      let p
+      if(btn.is_accept) {
+        p = this.$store.dispatch("api_post_ticket_accept", data)
+      } else {
+        p = this.$store.dispatch("api_handle_ticket_action", data)
+      }
+      p.then(resp => {
+        this.$Notice.success({ title: "处理成功" });
+        this.$router.push({ name: "todo" });
+      })
+      .catch(error => {
+        this.$Notice.error({ title: "工单处理失败" });
+        console.log(error);
+      });
+    },
     handleTicketTransition(formName, btn) {
       console.log(this.detailForm, this.detailFormRules, btn)
       this.$refs[formName].validate(valid => {
-        if (valid) {
-          console.log('btn',btn)
-          let data = {
-            id: this.ticket.id,
-            data: {
-              transition_id: btn.transition_id,
-              suggestion: this.suggestion
-                ? this.suggestion
-                : btn.transition_name
-            }
-          };
-          let formData = {};
-          let detailFormKeys = Object.keys(this.detailForm);
-          let fieldList = this.ticket.field_list;
-          for (let i = 0; i < fieldList.length; i++) {
-            for (let j = 0; j < detailFormKeys.length; j++) {
-              if (
-                [25, 30].includes(fieldList[i].field_type_id) &&
-                fieldList[i].field_key === detailFormKeys[j]
-              ) {
-                this.detailForm[detailFormKeys[j]] = this.detailForm[
-                  detailFormKeys[j]
-                ].format("yyyy-MM-dd hh:mm:ss");
+        if (!valid) return
+        console.log('btn',btn)
+        let info = {
+          id: this.ticket.id,
+          data: {
+            transition_id: btn.transition_id,
+            suggestion: this.suggestion
+              ? this.suggestion
+              : btn.transition_name
+          }
+        };
+        Object.assign(info.data, this.detailForm);
+        let fieldList = this.ticket.field_list;
+        for (let i = 0; i < Object.keys(fieldList).length; i++) {
+          let item = fieldList[i]
+          let data = info.data
+          if ([25, 30].includes(item.field_type_id) && data[item.field_key]) {
+            data[item.field_key] = data[item.field_key].format("yyyy-MM-dd hh:mm:ss")
+          }
+          if ([70].includes(item.field_type_id) && data[item.field_key]) {
+            data[item.field_key] = data[item.field_key].join(',')
+          }
+          if ([80, 90].includes(item.field_type_id) && data[item.field_key]) {
+            let arr = data[item.field_key].map(i => {
+              return {
+                name: i.name,
+                url: i.response ? i.response.url : i.url
               }
-            }
+            })
+            data[item.field_key] = JSON.stringify(arr)
           }
-          Object.assign(data.data, this.detailForm);
-          if(btn.is_accept) {
-            this.$store
-              .dispatch("api_post_ticket_accept", data)
-              .then(resp => {
-                this.$Notice.success({ title: "处理成功" });
-                this.$router.push({ name: "todo" });
-              })
-              .catch(error => {
-                this.$Notice.error({ title: "工单处理失败" });
-                console.log(error);
-              });
-          } else {
-            this.$store
-              .dispatch("api_handle_ticket_action", data)
-              .then(resp => {
-                this.$Notice.success({ title: "处理成功" });
-                this.$router.push({ name: "todo" });
-              })
-              .catch(error => {
-                this.$Notice.error({ title: "工单处理失败" });
-                console.log(error);
-              });
-          }
-          
-        } else {
-          console.log("form error");
-          return false;
         }
+        this.submit(btn, info)
+        this.$store
+          .dispatch("api_patch_update_ticket", info)
+          .then(resp => {
+            console.log(resp)
+          })
+          .catch(error => {
+            this.$Notice.error({ title: "工单保存失败" });
+            console.log(error);
+          });
       });
       if (Object.keys(this.detailForm).length === 0) {
-        let data = {
+        let info = {
           id: this.ticket.id,
           data: {
             transition_id: btn.transition_id,
             suggestion: this.suggestion ? this.suggestion : btn.transition_name
           }
         };
-        if(btn.is_accept) {
-          this.$store
-            .dispatch("api_post_ticket_accept", data)
-            .then(resp => {
-              this.$Notice.success({ title: "处理成功" });
-              this.$router.push({ name: "todo" });
-            })
-            .catch(error => {
-              this.$Notice.error({ title: "工单处理失败" });
-              console.log(error);
-            });
-        } else {
-          this.$store
-            .dispatch("api_handle_ticket_action", data)
-            .then(resp => {
-              this.$Notice.success({ title: "处理成功" });
-              this.$router.push({ name: "todo" });
-            })
-            .catch(error => {
-              this.$Notice.error({ title: "工单处理失败" });
-              console.log(error);
-            });
-        }
+        this.submit(btn, info)
       }
     }
   },
@@ -386,16 +432,28 @@ export default {
     },
     displaySelectKey(argument) {
       return argument => {
-        if (argument.field_type_id === 45) {
+        if (/35|45/.test(argument.field_type_id)) {
           return argument.field_choice[argument.field_value];
         }
-        return argument.field_value;
-      };
-    },
-    displaySelectKey(argument) {
-      return argument => {
-        if (argument.field_type_id === 45) {
-          return argument.field_choice[argument.field_value];
+        if (/80/.test(argument.field_type_id)) {
+          if(typeof(argument.field_value) == 'string') {
+            argument.field_value = JSON.parse(argument.field_value)
+          }
+          let html = ''
+          argument.field_value.forEach(item => {
+            html += `<div><a href="${item.url}" target="_blank">${item.name}</a></div>`
+          })
+          return html
+        }
+        if (/90/.test(argument.field_type_id)) {
+          if(typeof(argument.field_value) == 'string') {
+            argument.field_value = JSON.parse(argument.field_value)
+          }
+          let html = ''
+          argument.field_value.forEach(item => {
+            html += `<img src="${item.url}"></img>`
+          })
+          return html
         }
         return argument.field_value;
       };
@@ -403,7 +461,7 @@ export default {
     choiceFieldDisplay () {
       let result
       this.ticket.field_list.filter(item => {
-        if (item.field_type_id === 35) {
+        if (/35|45/.test(item.field_type_id)) {
           let keys = Object.keys(item.field_choice);
           for (let i = 0; i < keys.length; i++) {
             if (item.value === keys[i] || item.field_value === keys[i]) {
@@ -464,7 +522,7 @@ export default {
     ticket() {
       let fieldList = this.ticket.field_list;
       for (let i = 0; i < fieldList.length; i++) {
-        if (fieldList[i].field_attribute === 2) {
+        if (/2|3/.test(fieldList[i].field_attribute)) {
           // 动态设置detailForm表单默认值
           this.detailForm[fieldList[i].field_key] =
             fieldList[i].value || fieldList[i].field_value;
@@ -489,6 +547,11 @@ export default {
             this.detailFormRules[fieldList[i].field_type_id] = [
               { required: true, type: "boolean", trigger: "blur" }
             ];
+          } else if (/80|90/.test(fieldList[i].field_type_id)) {
+            let value = fieldList[i].value || fieldList[i].field_value
+            if(value) {
+              this.detailForm[fieldList[i].field_key] = JSON.parse(value)
+            }
           }
         }
       }
