@@ -370,8 +370,8 @@ export default {
     },
     handleTicketTransition(formName, btn) {
       console.log(this.detailForm, this.detailFormRules, btn)
-      // this.$refs[formName].validate(valid => {
-      //   if (!valid) return
+      this.$refs[formName].validate(valid => {
+        if (!valid) return
         console.log('btn',btn)
         let info = {
           id: this.ticket.id,
@@ -413,7 +413,7 @@ export default {
             this.$Notice.error({ title: "工单保存失败" });
             console.log(error);
           });
-      // });
+      });
       if (Object.keys(this.detailForm).length === 0) {
         let info = {
           id: this.ticket.id,
