@@ -33,7 +33,7 @@ class ShutongUser(AbstractUser):
     username = models.CharField(verbose_name=u'用户名', max_length=100, unique=True)
     alias = models.CharField(verbose_name=u'姓名', max_length=100, default='')
     email = models.EmailField(verbose_name=u'邮箱', max_length=100, default='')
-    phone = models.IntegerField(verbose_name=u'电话', default=0)
+    phone = models.CharField(verbose_name=u'电话', max_length=13, default=0)
     dept = models.ForeignKey('ShutongDept', db_column='dept', verbose_name=u'部门', on_delete=models.CASCADE)
     is_active = models.BooleanField(verbose_name=u'己激活', default=True)
     is_superuser = models.BooleanField(verbose_name=u'超级管理员', default=False)
@@ -52,8 +52,10 @@ class ShutongUser(AbstractUser):
 
 
 class ShutongUserRole(AbastractModel):
-    user = models.IntegerField(verbose_name=u'用户')
-    role = models.IntegerField(verbose_name=u'角色')
+    user = models.ForeignKey('ShutongUser', db_column='user', verbose_name=u'用户', on_delete=models.CASCADE)
+    role = models.ForeignKey('ShutongRole', db_column='role', verbose_name=u'角色', on_delete=models.CASCADE)
+    # user = models.IntegerField(verbose_name=u'用户')
+    # role = models.IntegerField(verbose_name=u'角色')
 
     def __str__(self):
         return '{}-{}'.format(self.user, self.role)

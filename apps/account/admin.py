@@ -40,9 +40,9 @@ class ShutongUserRoleAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ShutongDept, ShutongDeptAdmin)
-# admin.site.register(ShutongRole, ShutongRoleAdmin)
+admin.site.register(ShutongRole, ShutongRoleAdmin)
 admin.site.register(ShutongUser, ShutongUserAdmin)
-# admin.site.register(ShutongUserRole, ShutongUserRoleAdmin)
+admin.site.register(ShutongUserRole, ShutongUserRoleAdmin)
 
 admin.site.site_header = '用户管理'
 admin.site.site_title = '用户管理'
