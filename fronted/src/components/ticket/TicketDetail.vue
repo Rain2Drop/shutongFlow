@@ -284,7 +284,7 @@ export default {
         let index = fileList.findIndex(i => i.url == file.url)
         fileList.splice(index, 1)
       }
-      this.item.field_value = fileList
+      this.item.field_value = this.detailForm[this.item.field_key] = fileList
     },
     onremove (file, fileList) {
       console.log(file, fileList)
@@ -549,8 +549,10 @@ export default {
             ];
           } else if (/80|90/.test(fieldList[i].field_type_id)) {
             let value = fieldList[i].value || fieldList[i].field_value
-            if(value) {
+            if (value) {
               this.detailForm[fieldList[i].field_key] = JSON.parse(value)
+            } else {
+              this.detailForm[fieldList[i].field_key] = []
             }
           }
         }
