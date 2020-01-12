@@ -5,7 +5,7 @@ import App from './App'
 import i18n from './locale'
 import {router} from './router/index'
 import iView from 'iview'
-import {RadioGroup, Radio} from 'element-ui'
+import {RadioGroup, Radio, Upload, Dialog} from 'element-ui'
 import 'iview/dist/styles/iview.css'
 import axios from 'axios'
 import store from './store/index'
@@ -16,6 +16,8 @@ import '../static/ueditor/ueditor.parse'
 
 Vue.component(RadioGroup.name, RadioGroup)
 Vue.component(Radio.name, Radio)
+Vue.component(Upload.name, Upload)
+Vue.component(Dialog.name, Dialog)
 
 Vue.config.productionTip = false
 Vue.use(iView)

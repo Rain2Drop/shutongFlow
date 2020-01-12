@@ -168,6 +168,15 @@ const store = new Vuex.Store({
         })
       })
     },
+    api_patch_update_ticket: (context, data) => {
+      return new Promise((resolve, reject) => {
+        axios.patch(`/api/v1/service/update_ticket/${data.id}/`, data.data).then(resp => {
+          resolve(resp)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
   }
 })
 

@@ -1,4 +1,11 @@
 <template>
+  <!-- TODO: ElementUI/iView对于动态v-model都有BUG，改用单选菜单方式 -->
+  <!-- <el-radio-group v-if="item.field_type_id === 35" v-model="newForm[item.field_key]">
+    <el-radio v-for="(choice, i) in Object.keys(item.field_choice)" :key="i" :label="choice">{{item.field_choice[choice]}}</el-radio>
+  </el-radio-group> -->
+  <!-- <RadioGroup v-if="item.field_type_id === 35" v-model="newForm[item.field_key]">
+    <Radio v-for="(choice, i) in Object.keys(item.field_choice)" :key="i" :label="choice">{{item.field_choice[choice]}}</Radio>
+  </RadioGroup> -->
   <div class="container">
     <div class="select-workflow-con">
       <Card style="text-align: left;">
@@ -16,30 +23,52 @@
             <Row>
               <Col :md="{span: item.field_type_id === 55 ? 22 : 11}" v-for="(item, index) in init_state.field_list" :key="index">
                 <FormItem :label="item.name || item.field_name" :prop="item.field_key">
-                  <Input v-if="item.field_type_id === 5" v-model="newForm[item.field_key]" :placeholder="$t(`field_label.${item.field_key}`)"></Input>
+                  <Input v-if="item.field_type_id === 5" v-model="newForm[item.field_key]" :placeholder="$t(`field_label.${item.field_key}`)"/>
                   <InputNumber v-if="item.field_type_id === 15" v-model="newForm[item.field_key]" :min="0" :step="0.5" style="width: 100%;"></InputNumber>
                   <DatePicker v-if="item.field_type_id === 30" v-model="newForm[item.field_key]" type="datetime" format="yyyy-MM-dd HH:mm:ss" style="width: 100%;" :placeholder="$t(`field_label.${item.field_key}`)"></DatePicker>
-                  <!-- TODO: ElementUI/iView对于动态v-model都有BUG，改用单选菜单方式 -->
-                  <!-- <el-radio-group v-if="item.field_type_id === 35" v-model="newForm[item.field_key]">
-                    <el-radio v-for="(choice, i) in Object.keys(item.field_choice)" :key="i" :label="choice">{{item.field_choice[choice]}}</el-radio>
-                  </el-radio-group> -->
-                  <!-- <RadioGroup v-if="item.field_type_id === 35" v-model="newForm[item.field_key]">
-                    <Radio v-for="(choice, i) in Object.keys(item.field_choice)" :key="i" :label="choice">{{item.field_choice[choice]}}</Radio>
-                  </RadioGroup> -->
                   <Select v-if="item.field_type_id === 40" v-model="newForm[item.field_key]" multiple :placeholder="$t(`field_label.${item.field_key}`)">
                     <Option v-for="(choice, i) in Object.keys(item.field_choice)" :key="i" :value="choice">{{item.field_choice[choice]}}</Option>
                   </Select>
                   <Select v-if="item.field_type_id === 45 || item.field_type_id === 35" v-model="newForm[item.field_key]" :placeholder="$t(`field_label.${item.field_key}`)">
                     <Option v-for="(choice, i) in Object.keys(item.field_choice)" :key="i" :value="choice">{{item.field_choice[choice]}}</Option>
                   </Select>
-                  <!-- <tinymce v-if="item.field_type_id === 55" v-model="newForm[item.field_key]" :id="item.field_key" :other_option="tinymceOptions"></tinymce> -->
-                  <ueditor v-if="item.field_type_id === 55" ueditorConfig="ueditorConfig" @ready="handleReady"></ueditor>
+
+                  <ueditor v-if="item.field_type_id === 55" @ready="handleReady" :field_key="item.field_key"></ueditor>
                   <Select v-if="item.field_type_id === 60" v-model="newForm[item.field_key]" :placeholder="$t(`field_label.${item.field_key}`)">
                     <Option v-for="(user, index) in accountList" :key="index" :value="user.username">{{user.alias}}</Option>
                   </Select>
                   <Select v-if="item.field_type_id === 70" v-model="newForm[item.field_key]" multiple :placeholder="$t(`field_label.${item.field_key}`)">
                     <Option v-for="(user, index) in accountList" :key="index" :value="user.username">{{user.alias}}</Option>
                   </Select>
+                  <el-upload
+                    v-if="item.field_type_id === 80"
+                    action="/api/v1/service/ueditor/?action=uploadfile&encode=utf-8"
+                    :on-success="onsuccess"
+                    :on-remove="onremove"
+                    name="upfile"
+                    :file-list="getFileList(item)">
+                    <Button type="primary" size="small" @click="getItem(item)">点击上传</Button>
+                  </el-upload>
+                  <el-upload
+                    @click.native="getItem(item)"
+                    v-if="item.field_type_id === 90"
+                    action="/api/v1/service/ueditor/?action=uploadimage"
+                    :on-success="onsuccess"
+                    :on-remove="onremove"
+                    :on-preview="onpreview"
+                    accept="image/*"
+                    name="upfile"
+                    list-type="picture-card"
+                    :file-list="getFileList(item)">
+                    <i class="el-icon-plus"></i>
+                  </el-upload>
+                  <el-dialog
+                    v-if="item.field_type_id === 90"
+                    :visible.sync="Dialog" 
+                    :modal="false"
+                    top="10vh">
+                    <img width="100%" :src="imgSrc" alt="图片">
+                  </el-dialog>
                 </FormItem>
               </Col>
             </Row>
@@ -79,10 +108,51 @@ export default {
       workflow: null,
       init_state: {},
       workflowTitle: '',
-      ueditorConfig: {}
+      ueditorConfig: {},
+      Dialog: false,
+      item: {},
+      imgSrc: ''
     }
   },
   methods: {
+    getFileList (item) {
+      let data = item.field_value || item.default_value
+      if (data) {
+        if(Array.isArray(data)) {
+          return data
+        } else {
+          return JSON.parse(data)
+        }
+      }
+      return []
+    },
+    getItem (item) {
+      this.item = item
+    },
+    onsuccess (response, file, fileList) {
+      if (response.state != 'SUCCESS') {
+        this.$Notice.error({title: '上传失败'})
+        let index = fileList.findIndex(i => i.name == file.name)
+        fileList.splice(index, 1)
+      }
+      this.item.field_value = fileList
+    },
+    onremove (file, fileList) {
+      let arr = this.init_state.field_list
+      for(let i = 0; i < arr.length; i++) {
+        if(Array.isArray(arr[i].field_value)) {
+          let index = arr[i].field_value.findIndex(i => i.name == file.name)
+          if(index >= 0) {
+            fileList.splice(index, 1)
+            arr[i].field_value.splice(index, 1)
+          }
+        }
+      }
+    },
+    onpreview (file) {
+      this.Dialog = true
+      this.imgSrc = file.url
+    },
     init () {
       this.loading = true
       this.$store.dispatch('api_workflows').then(resp => {
@@ -107,39 +177,43 @@ export default {
     },
     handleButton (formName, id) {
       this.$refs[formName].validate(valid => {
-        if (valid) {
-          var data = {
-            workflow_id: this.workflow,
-            transition_id: id
-          }
-          Object.assign(data, this.newForm)
-          for (let i = 0; i < Object.keys(this.init_state.field_list).length; i++) {
-            if ([25, 30].includes(this.init_state.field_list[i].field_type_id)) {
-              data[this.init_state.field_list[i].field_key] = data[this.init_state.field_list[i].field_key].format("yyyy-MM-dd hh:mm:ss")
-            }
-            if ([70].includes(this.init_state.field_list[i].field_type_id)) {
-              data[this.init_state.field_list[i].field_key] = data[this.init_state.field_list[i].field_key].join(',')
-            }
-          }
-          this.$store.dispatch('api_post_ticket', data).then(resp => {
-            this.$Notice.success({title: '创建成功'})
-            this.$router.push({name: 'myself'})
-          }).catch(error => {
-            this.$Notice.error({title: '创建失败'})
-          })
-        } else {
-          return false
+        if (!valid) return
+        let data = {
+          workflow_id: this.workflow,
+          transition_id: id
         }
+        Object.assign(data, this.newForm)
+        for (let i = 0; i < Object.keys(this.init_state.field_list).length; i++) {
+          let item = this.init_state.field_list[i]
+          if ([25, 30].includes(item.field_type_id)) {
+            data[item.field_key] = data[item.field_key].format("yyyy-MM-dd hh:mm:ss")
+          }
+          if ([70].includes(item.field_type_id)) {
+            data[item.field_key] = data[item.field_key].join(',')
+          }
+          if ([80, 90].includes(item.field_type_id)) {
+            let arr = item.field_value.map(i => {
+              return {
+                name: i.name,
+                url: i.response.url
+              }
+            })
+            console.log(arr)
+            data[item.field_key] = JSON.stringify(arr)
+          }
+        }
+        this.$store.dispatch('api_post_ticket', data).then(resp => {
+          this.$Notice.success({title: '创建成功'})
+          this.$router.push({name: 'myself'})
+        }).catch(error => {
+          this.$Notice.error({title: '创建失败'})
+        })
       })
     },
-    handleReady (instance) {
+    handleReady (instance, field_key) {
       instance.setContent('')
       instance.addListener('contentChange', () => {
-        for (let i = 0; i < this.init_state.field_list.length; i++) {
-          if (this.init_state.field_list[i].field_type_id === 55) {
-            this.newForm[this.init_state.field_list[i].field_key] = instance.getContent()
-          }
-        }
+        this.newForm[field_key] = instance.getContent()
       })
     },
     reset (formName) {
@@ -174,14 +248,17 @@ export default {
     },
     newForm () {
       let form = {}
-      for (let i = 0; i < this.init_state.field_list.length; i++) {
-        if ([40, 50, 70].includes(this.init_state.field_list[i].field_type_id)) {
-          form[this.init_state.field_list[i].field_key] = []
-        } else if ([10, 15].includes(this.init_state.field_list[i].field_type_id)) {
-          form[this.init_state.field_list[i].field_key] = 0
+      let list = this.init_state.field_list
+      let value
+      for (let i = 0; i < list.length; i++) {
+        if ([40, 50, 70].includes(list[i].field_type_id)) {
+          value = []
+        } else if ([10, 15].includes(list[i].field_type_id)) {
+          value = 0
         } else {
-          form[this.init_state.field_list[i].field_key] = ''
+          value = ''
         }
+        form[list[i].field_key] = list[i].default_value || value
       }
       return form
     }

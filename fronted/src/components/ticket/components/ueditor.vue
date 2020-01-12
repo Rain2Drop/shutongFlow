@@ -1,6 +1,6 @@
 <template>
   <div>
-    <script id="ueditor-container" type="text/plain"></script>
+    <script :id="ueditorName" type="text/plain"></script>
   </div>
 </template>
 <script>
@@ -13,7 +13,19 @@ export default {
     }
   },
   props: {
-    config: {type: Object}
+    ueditorName: {
+      type: String,
+      default: 'ueditor-container'
+    },
+    ueditorConfig: {
+      type: Object,
+      default: function () {
+        return {}
+      }
+    },
+    field_key: {
+      type: String
+    }
   },
   mounted () {
     this.initEditor()
@@ -21,10 +33,10 @@ export default {
   methods: {
     initEditor () {
       this.$nextTick(() => {
-        this.instance = UE.getEditor('ueditor-container', this.config);
+        this.instance = UE.getEditor(this.ueditorName, this.ueditorConfig);
         // 绑定事件，当 UEditor 初始化完成后，将编辑器实例通过自定义的 ready 事件交出去
         this.instance.addListener('ready', () => {
-          this.$emit('ready', this.instance)
+          this.$emit('ready', this.instance, this.field_key)
         });
       })
     },
