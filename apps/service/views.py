@@ -263,10 +263,12 @@ def upload_file(file_obj, file_type='pic'):
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder)
         absolute_path = os.path.join(upload_folder, file_name) + '.%s' % file_postfix
-        if file_postfix.lower() in (
-                "sql", "jpg", "jpeg", "bmp", "gif", "png", "xls", "xlsx", "rar", "doc", "docx", "zip", "pdf", "txt",
-                "swf",
-                "wmv"):
+        if file_type == 'pic' and file_postfix.lower() not in ("svg", "svgz", "webp", "ico", "xbm", "dib",
+                "jpg", "jpeg", "bmp", "gif", "png", "tiff", "pjp", "pjpeg", "jfif", "tif", "gif"):
+            response_dict = {'original': filename, 'url': '', 'title': 'source_file_tile', 'state': 'FAIL',
+                             'msg': 'invalid file format'}
+
+        else:
             destination = open(absolute_path, 'wb+')
             for chunk in file_obj.chunks():
                 destination.write(chunk)
@@ -286,9 +288,6 @@ def upload_file(file_obj, file_type='pic'):
             os.remove(absolute_path)
             response_dict = {'original': filename, 'url': real_url, 'title': 'source_file_tile', 'state': 'SUCCESS',
                              'msg': ''}
-        else:
-            response_dict = {'original': filename, 'url': '', 'title': 'source_file_tile', 'state': 'FAIL',
-                             'msg': 'invalid file format'}
     else:
         response_dict = {'original': '', 'url': '', 'title': 'source_file_tile', 'state': 'FAIL',
                          'msg': 'invalid file obj'}
