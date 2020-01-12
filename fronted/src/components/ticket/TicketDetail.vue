@@ -435,24 +435,17 @@ export default {
         if (/35|45/.test(argument.field_type_id)) {
           return argument.field_choice[argument.field_value];
         }
-        if (/80/.test(argument.field_type_id)) {
+        if (/80|90/.test(argument.field_type_id)) {
           if(typeof(argument.field_value) == 'string') {
             argument.field_value = JSON.parse(argument.field_value)
           }
           let html = ''
-          argument.field_value.forEach(item => {
-            html += `<div><a href="${item.url}" target="_blank">${item.name}</a></div>`
-          })
-          return html
-        }
-        if (/90/.test(argument.field_type_id)) {
-          if(typeof(argument.field_value) == 'string') {
-            argument.field_value = JSON.parse(argument.field_value)
+          if (Array.isArray(argument.field_value)) {
+            argument.field_value.forEach(item => {
+              if(/80/.test(argument.field_type_id)) html += `<div><a href="${item.url}" target="_blank">${item.name}</a></div>`
+              if(/90/.test(argument.field_type_id)) html += `<img src="${item.url}" width="100%"></img>`
+            })
           }
-          let html = ''
-          argument.field_value.forEach(item => {
-            html += `<img src="${item.url}"></img>`
-          })
           return html
         }
         return argument.field_value;
