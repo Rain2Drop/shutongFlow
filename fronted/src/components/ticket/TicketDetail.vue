@@ -158,7 +158,7 @@
                       <i class="el-icon-plus"></i>
                     </el-upload>
                     <el-dialog
-                      :visible.sync="Dialog" 
+                      :visible.sync="Dialog"
                       :modal="false"
                       top="10vh">
                       <img width="100%" :src="imgSrc" alt="图片">
@@ -232,7 +232,10 @@ export default {
           {
             key: "participant",
             title: "参与者",
-            align: "center"
+            align: "center",
+            render: (h, params) => {
+              return h("div", [h("span", {}, params.row.participant_info.participant_alias)]);
+            }
           },
           {
             key: "gmt_created",
