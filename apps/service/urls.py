@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from service.views import LoonFlowAPIView
+from service.views import LoonFlowAPIView, LoonFlowTicketDeliverViewSet
 from service.views import LoonFlowInitStateViewSet
 from service.views import LoonFlowUpdateTicketViewSet
 from service.views import LoonFlowCreateTicketViewSet
@@ -19,6 +19,7 @@ router.register('create_ticket', LoonFlowCreateTicketViewSet, 'create_ticket')
 router.register('update_ticket', LoonFlowUpdateTicketViewSet, 'update_ticket')
 router.register('tickets', LoonFlowTicketViewSet, 'tickets')
 router.register('ticket_accept', LoonFlowTicketAcceptViewSet, 'ticket_accept')
+router.register('ticket_deliver', LoonFlowTicketDeliverViewSet, 'ticket_deliver')
 router.register('steps', LoonFlowStepViewSet, 'steps')
 router.register('logs', LoonFlowTransitionViewSet, 'logs')
 router.register('actions', LoonFlowTranActionViewSet, 'actions')

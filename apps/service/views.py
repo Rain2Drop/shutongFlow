@@ -167,6 +167,24 @@ class LoonFlowTicketAcceptViewSet(ViewSet):
             return Response({'code': resp['code'], 'data': None, 'msg': resp['msg']}, status=status_resp)
 
 
+class LoonFlowTicketDeliverViewSet(ViewSet):
+    authentication_classes = [JSONWebTokenAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, pk=None):
+        request.data['username'] = request.user.username
+        ins = WorkFlowAPiRequest(username=self.request.user.username)
+        rstatus, resp = ins.getdata(parameters={}, method='post', url='/api/v1.0/tickets/{}/deliver'.format(pk),
+                                    data=request.data)
+        if resp['code'] == 0:
+            status_resp = status.HTTP_200_OK
+            return Response({'code': resp['code'], 'data': resp['data'], 'msg': resp['msg']},
+                            status=status_resp)
+        else:
+            status_resp = status.HTTP_400_BAD_REQUEST
+            return Response({'code': resp['code'], 'data': None, 'msg': resp['msg']}, status=status_resp)
+
+
 class LoonFlowStepViewSet(ViewSet):
     authentication_classes = [JSONWebTokenAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
@@ -263,10 +281,13 @@ def upload_file(file_obj, file_type='pic'):
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder)
         absolute_path = os.path.join(upload_folder, file_name) + '.%s' % file_postfix
-        if file_postfix.lower() in (
-                "sql", "jpg", "jpeg", "bmp", "gif", "png", "xls", "xlsx", "rar", "doc", "docx", "zip", "pdf", "txt",
-                "swf",
-                "wmv"):
+        if file_type == 'pic' and file_postfix.lower() not in ("svg", "svgz", "webp", "ico", "xbm", "dib",
+                                                               "jpg", "jpeg", "bmp", "gif", "png", "tiff", "pjp",
+                                                               "pjpeg", "jfif", "tif", "gif"):
+            response_dict = {'original': filename, 'url': '', 'title': 'source_file_tile', 'state': 'FAIL',
+                             'msg': 'invalid file format'}
+
+        else:
             destination = open(absolute_path, 'wb+')
             for chunk in file_obj.chunks():
                 destination.write(chunk)
@@ -286,9 +307,6 @@ def upload_file(file_obj, file_type='pic'):
             os.remove(absolute_path)
             response_dict = {'original': filename, 'url': real_url, 'title': 'source_file_tile', 'state': 'SUCCESS',
                              'msg': ''}
-        else:
-            response_dict = {'original': filename, 'url': '', 'title': 'source_file_tile', 'state': 'FAIL',
-                             'msg': 'invalid file format'}
     else:
         response_dict = {'original': '', 'url': '', 'title': 'source_file_tile', 'state': 'FAIL',
                          'msg': 'invalid file obj'}
