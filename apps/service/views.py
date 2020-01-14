@@ -17,6 +17,8 @@ from service.serializers import LoonFlowAttachmentSerializer
 from apps.apirequest import WorkFlowAPiRequest
 
 from service.ali_oss import Bucket
+from account.models import ShutongUser
+from account.serializers import FetchAccountUserSerializer
 
 
 class LoonFlowAPIView(APIView):
@@ -107,6 +109,10 @@ class LoonFlowTicketViewSet(ViewSet):
         url = '/api/v1.0/tickets?username={}'.format(username)
 
         if category:
+            queryset = ShutongUser.objects.filter(username=username)
+            data = FetchAccountUserSerializer(queryset, many=True).data
+            if not data[0].get('is_superuser') and category == 'all':
+                category = 'relation'
             url += '&category={}'.format(category)
 
         # resp = requests.get(url).text
@@ -184,6 +190,17 @@ class LoonFlowTicketDeliverViewSet(ViewSet):
             status_resp = status.HTTP_400_BAD_REQUEST
             return Response({'code': resp['code'], 'data': None, 'msg': resp['msg']}, status=status_resp)
 
+
+class LoonFlowTicketRetryScriptViewSet(ViewSet):
+    authentication_classes = [JSONWebTokenAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, pk=None):
+        request.data['username'] = request.user.username
+        ins = WorkFlowAPiRequest(username=self.request.user.username)
+        ins.getdata(parameters={}, method='post', url='/api/v1.0/tickets/{}/retry_script'.format(pk),
+                    data=request.data)
+        return Response({'code': 0}, status=status.HTTP_200_OK)
 
 class LoonFlowStepViewSet(ViewSet):
     authentication_classes = [JSONWebTokenAuthentication, BasicAuthentication]

@@ -56,6 +56,11 @@ export default {
             title: '创建人',
             align: 'center',
             width: 100,
+            render: (h, params) => {
+              return h('div', [
+                h('span', {}, params.row.creator_info.alias)
+              ])
+            }
           },
           {
             key: 'gmt_created',
