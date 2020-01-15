@@ -450,6 +450,8 @@ export default {
             })
           }
           return html
+        }else if(/http/.test(argument.field_value)){
+          return `<a href="${argument.field_value}" target="_blank">${argument.field_value}</a>`
         }
         return argument.field_value;
       };
@@ -523,11 +525,7 @@ export default {
           this.detailForm[fieldList[i].field_key] =
             fieldList[i].value || fieldList[i].field_value;
           // 动态设置detailForm表单验证
-          if ([5, 35, 45, 55, 60].includes(fieldList[i].field_type_id)) {
-            this.detailFormRules[fieldList[i].field_key] = [
-              { required: true, type: "string", trigger: "blur" }
-            ];
-          } else if ([25, 30].includes(fieldList[i].field_type_id)) {
+          if ([25, 30].includes(fieldList[i].field_type_id)) {
             this.detailFormRules[fieldList[i].field_key] = [
               { required: true, type: "date", trigger: "blur" }
             ];
@@ -543,7 +541,12 @@ export default {
             this.detailFormRules[fieldList[i].field_type_id] = [
               { required: true, type: "boolean", trigger: "blur" }
             ];
-          } else if (/80|90/.test(fieldList[i].field_type_id)) {
+          } else {
+            this.detailFormRules[fieldList[i].field_key] = [
+              { required: true, type: "string", trigger: "blur" }
+            ];
+          }
+          if (/80|90/.test(fieldList[i].field_type_id)) {
             let value = fieldList[i].value || fieldList[i].field_value
             if (value) {
               this.detailForm[fieldList[i].field_key] = JSON.parse(value)
