@@ -52,7 +52,7 @@ export default {
         if (valid) {
           this.$store.dispatch('login', this.loginForm).then(resp => {
             this.$Notice.success({title: '登录成功！'})
-            this.$router.push({name: 'new'})
+            this.$router.push({name: 'todo'})
           }).catch(error => {
             console.log(error)
             this.$Notice.error({title: '登录失败！'})

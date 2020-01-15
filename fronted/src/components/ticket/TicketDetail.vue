@@ -447,6 +447,8 @@ export default {
             })
           }
           return html
+        }else if(/http/.test(argument.field_value)){
+          return `<a href="${argument.field_value}" target="_blank">${argument.field_value}</a>`
         }
         return argument.field_value;
       };

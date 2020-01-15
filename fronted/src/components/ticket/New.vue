@@ -74,7 +74,7 @@
             </Row>
             <FormItem style="text-align: center;">
               <Button v-for="(btn, b) in init_state.transition" :key="b" @click="handleButton('newForm', btn.transition_id)" :type="btn.transition_id === 1 ? 'primary' : 'info'" style="margin: 0 5px;">{{btn.transition_name}}</Button>
-              <Button type="warning" style="margin: 0 5px;" @click="reset('newForm')">重置</Button>
+              <!-- <Button type="warning" style="margin: 0 5px;" @click="reset('newForm')">重置</Button> -->
             </FormItem>
           </Form>
         </div>
