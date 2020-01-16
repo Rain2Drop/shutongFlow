@@ -522,36 +522,38 @@ export default {
       for (let i = 0; i < fieldList.length; i++) {
         if (/2|3/.test(fieldList[i].field_attribute)) {
           // 动态设置detailForm表单默认值
-          this.detailForm[fieldList[i].field_key] =
-            fieldList[i].value || fieldList[i].field_value;
-          // 动态设置detailForm表单验证
-          if ([25, 30].includes(fieldList[i].field_type_id)) {
-            this.detailFormRules[fieldList[i].field_key] = [
-              { required: true, type: "date", trigger: "blur" }
-            ];
-          } else if ([40, 50, 70].includes(fieldList[i].field_type_id)) {
-            this.detailFormRules[fieldList[i].field_key] = [
-              { required: true, type: "array", trigger: "blur" }
-            ];
-          } else if ([10, 15].includes(fieldList[i].field_type_id)) {
-            this.detailFormRules[fieldList[i].field_key] = [
-              { required: true, type: "number", trigger: "blur" }
-            ];
-          } else if (fieldList[i].field_type_id === 20) {
-            this.detailFormRules[fieldList[i].field_type_id] = [
-              { required: true, type: "boolean", trigger: "blur" }
-            ];
-          } else {
-            this.detailFormRules[fieldList[i].field_key] = [
-              { required: true, type: "string", trigger: "blur" }
-            ];
-          }
           if (/80|90/.test(fieldList[i].field_type_id)) {
             let value = fieldList[i].value || fieldList[i].field_value
             if (value) {
               this.detailForm[fieldList[i].field_key] = JSON.parse(value)
             } else {
               this.detailForm[fieldList[i].field_key] = []
+            }
+          }else{
+            this.detailForm[fieldList[i].field_key] = fieldList[i].value || fieldList[i].field_value
+          }
+          if (/2/.test(fieldList[i].field_attribute)) {
+            // 动态设置detailForm表单验证
+            if ([25, 30].includes(fieldList[i].field_type_id)) {
+              this.detailFormRules[fieldList[i].field_key] = [
+                { required: true, type: "date", trigger: "blur" }
+              ];
+            } else if ([40, 50, 70].includes(fieldList[i].field_type_id)) {
+              this.detailFormRules[fieldList[i].field_key] = [
+                { required: true, type: "array", trigger: "blur" }
+              ];
+            } else if ([10, 15].includes(fieldList[i].field_type_id)) {
+              this.detailFormRules[fieldList[i].field_key] = [
+                { required: true, type: "number", trigger: "blur" }
+              ];
+            } else if (fieldList[i].field_type_id === 20) {
+              this.detailFormRules[fieldList[i].field_type_id] = [
+                { required: true, type: "boolean", trigger: "blur" }
+              ];
+            } else {
+              this.detailFormRules[fieldList[i].field_key] = [
+                { required: true, type: "string", trigger: "blur" }
+              ];
             }
           }
         }
