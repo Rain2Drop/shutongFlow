@@ -374,6 +374,7 @@ export default {
     handleTicketTransition(formName, btn) {
       console.log(this.detailForm, this.detailFormRules, btn)
       this.$refs[formName].validate(valid => {
+        console.log(valid)
         if (!valid) return
         console.log('btn',btn)
         let info = {
@@ -438,6 +439,14 @@ export default {
         if (/35|45/.test(argument.field_type_id)) {
           return argument.field_choice[argument.field_value];
         }
+        if (/60|70/.test(argument.field_type_id)) {
+          let usernames = argument.field_value.split(',')
+          let alias = usernames.map(i => {
+            let obj = this.accountList.find(j => j.username == i) || {}
+            return obj.alias
+          })
+          return alias.join(',')
+        }
         if (/80|90/.test(argument.field_type_id)) {
           if(typeof(argument.field_value) == 'string') {
             argument.field_value = JSON.parse(argument.field_value)
@@ -450,7 +459,7 @@ export default {
             })
           }
           return html
-        }else if(/http/.test(argument.field_value)){
+        }else if(/^http/.test(argument.field_value)){
           return `<a href="${argument.field_value}" target="_blank">${argument.field_value}</a>`
         }
         return argument.field_value;
@@ -538,7 +547,7 @@ export default {
               this.detailFormRules[fieldList[i].field_key] = [
                 { required: true, type: "date", trigger: "blur" }
               ];
-            } else if ([40, 50, 70].includes(fieldList[i].field_type_id)) {
+            } else if ([40, 50, 70, 80, 90].includes(fieldList[i].field_type_id)) {
               this.detailFormRules[fieldList[i].field_key] = [
                 { required: true, type: "array", trigger: "blur" }
               ];

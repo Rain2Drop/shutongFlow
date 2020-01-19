@@ -231,16 +231,16 @@ export default {
       let validators = {}
       this.init_state.field_list.map(item => {
         if (item.field_attribute === 2) {
-          if ([5, 35, 45, 55, 60].includes(item.field_type_id)) {
-            validators[item.field_key] = [{validator: Validators.string, type: 'string', trigger: 'blur'}]
-          } else if ([25, 30].includes(item.field_type_id)) {
+          if ([25, 30].includes(item.field_type_id)) {
             validators[item.field_key] = [{validator: Validators.datetime, type: 'date', trigger: 'blur'}]
-          } else if ([40, 50, 70].includes(item.field_type_id)) {
+          } else if ([40, 50, 70, 80, 90].includes(item.field_type_id)) {
             validators[item.field_key] = [{required: true, type: 'array', trigger: 'blur'}]
           } else if ([10, 15].includes(item.field_type_id)) {
             validators[item.field_key] = [{validator: Validators.number, type: 'number', trigger: 'blur'}]
           } else if (item.field_type_id === 20) {
             validators[item.field_type_id] = [{required: true, type: 'boolean', trigger: 'blur'}]
+          } else {
+            validators[item.field_key] = [{validator: Validators.string, type: 'string', trigger: 'blur'}]
           }
         }
       })
